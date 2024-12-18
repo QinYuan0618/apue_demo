@@ -1,12 +1,4 @@
-#include <sys/types.h>
-#include <dirent.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <errno.h>
+#include "ds18b20.h"
 
 int get_temperature(float *temp);
 
