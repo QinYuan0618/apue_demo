@@ -1,31 +1,47 @@
+/**
+ * @Author: QinYuan
+ * @Date: 12/18/2024, 8:54:43 PM
+ * @LastEditors: QinYuan
+ * @LastEditTime: 12/18/2024, 8:54:43 PM
+ * Description:
+ */
+
 #include "ds18b20.h"
 
-int get_temperature(float *temp);
-
-int main(int argc, char *argv[])
+int main(int argc, char **argv)
 {
-  float                   temp;
-  int                     rv;
+  float                   temp; // 温度数据
+  int                     rv;   // 返回值
 
+  // 获取温度值，失败则返回错误
   rv = get_temperature(&temp);
   if (rv < 0)
   {
     printf("get temprature failure, return value: %d", rv);
     return -1;
   }
-  printf("temp %f:", temp);
+
+  // 打印获取到的温度值
+  printf("Temperatrue: %f", temp);
+  return 0;
 }
 
+
+/*
+ * @brief 获取温度功能函数
+ * @param temp 存储获取温度数据的指针
+ * @return int 返回0表示成功，否则错误
+ */
 int get_temperature(float *temp)
 {
-  int                     fd = -1;
-  char                    buf[128];
-  char *ptr = NULL;
-  DIR *dirp = NULL;
-  struct  dirent *direntp = NULL;
-  char            w1_path[64] = "/sys/bus/w1/devices/";
-  char                    chip_sn[32];
-  int                     found = 0;
+  int                     fd = -1;        // 文件描述符
+  char                    buf[128];       // 存储读取数据的缓冲区
+  char                   *ptr = NULL;     // 指向数据中的 "t=" 字符串位置
+  DIR                    *dirp = NULL;    // 目录指针
+  struct  dirent         *direntp = NULL; // 目录项
+  char                    w1_path[64] = "/sys/bus/w1/devices/"; // w1设备路径
+  char                    chip_sn[32];    // DS18B20芯片的序列号
+  int                     found = 0;      // 是否找到设备的标志
 
   dirp = opendir(w1_path);
   if (!dirp)
