@@ -17,12 +17,12 @@ int main(int argc, char **argv)
   rv = get_temperature(&temp);
   if (rv < 0)
   {
-    printf("get temprature failure, return value: %d", rv);
+    printf("get temperature failure, return value: %d", rv);
     return -1;
   }
 
   // 打印获取到的温度值
-  printf("Temperatrue: %f", temp);
+  printf("Temperature: %f", temp);
   return 0;
 }
 
@@ -35,7 +35,7 @@ int main(int argc, char **argv)
 int get_temperature(float *temp)
 {
   int                     fd = -1;        // 文件描述符
-  char                    buf[128];       // 存储读取数据的缓冲区
+  char                    buf[256];       // 存储读取数据的缓冲区
   char                   *ptr = NULL;     // 指向数据中的 "t=" 字符串位置
   DIR                    *dirp = NULL;    // 目录指针
   struct  dirent         *direntp = NULL; // 目录项
@@ -43,6 +43,7 @@ int get_temperature(float *temp)
   char                    chip_sn[32];    // DS18B20芯片的序列号
   int                     found = 0;      // 是否找到设备的标志
 
+  // 1.打开w1设备目录, dirp指向这个目录
   dirp = opendir(w1_path);
   if (!dirp)
   {
@@ -50,6 +51,7 @@ int get_temperature(float *temp)
     return -1;
   }
 
+  // 2.查找以"28-"开头的设备名称，表示DS18B20，将设备名称赋值给chip_sn
   while (NULL != (direntp = readdir(dirp)))
   {
     if (strstr(direntp->d_name, "28-"))
@@ -59,32 +61,36 @@ int get_temperature(float *temp)
     }
   }
 
-  closedir(dirp);
+  closedir(dirp); //关闭目录
 
+  // 如果没找到该设备，返回错误
   if (!found)
   {
-    printf("can not found ds18b20 chipset\n");
+    printf("can not found ds18b20 chipset\n"); 
     return -2;
   }
 
+  // 3.构建设备路径 /sys/bus/w1/devices/28-xxxxxxx/w1_slave
   strncat(w1_path, chip_sn, sizeof(w1_path) - strlen(w1_path));
   strncat(w1_path, "/w1_slave", sizeof(w1_path) - strlen(w1_path));
 
-  if ((fd = open(w1_path, O_RDONLY)) < 0)
+  // 4.根据设备路径打开设备文件
+  if ( (fd=open(w1_path, O_RDONLY)) < 0 )
   {
-    printf("open file failure: %s\n", strerror(errno));
+    // printf("open file failure: %s\n", strerror(errno));
     perror("open file failure");
     return -3;
   }
 
+  // 5.读取数据
   memset(buf, 0, sizeof(buf));
-
   if (read(fd, buf, sizeof(buf)) < 0)
   {
     printf("read data from fd=%d failure: %s\n", fd, strerror(errno));
     return -4;
   }
 
+  // 6.找到"t="字符串，获取温度值。原为...t=11625
   ptr = strstr(buf, "t=");
   if (!ptr)
   {
@@ -92,10 +98,11 @@ int get_temperature(float *temp)
     return -5;
   }
 
-  ptr += 2;
+  ptr += 2; // 跳过"t="
 
+  // 7.温度数据转为浮点数并储存
   *temp = atof(ptr) / 1000;
-  printf("temperature: %f\n", *temp);
+  printf("[Raspberry Pi Temperature]: %f℃\n", *temp);
 
   close(fd);
 
